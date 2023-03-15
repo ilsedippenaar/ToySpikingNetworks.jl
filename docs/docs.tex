@@ -1,0 +1,92 @@
+\documentclass[12pt]{article}
+\usepackage{bbm}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\graphicspath{{./figs}}
+\title{Spiking Neural Networks}
+\author{Ilse Dippenaar}
+\date{2023-03-16}
+\begin{document}
+\maketitle
+\section{Introduction}
+
+The central motivating question of this project was to ask how cell type diversity impacts the dynamics of spiking neural networks. In other words, do variations in the parameters of individual cells in the network make the network dynamics more or less linear? There are myriad ways to answer this question, though an easy approach would be to start simply with leaky integrate-and-fire (LIF) dynamics.
+
+\section{Network Model}
+\subsection{Network Structure}
+The network was defined using random placement of point neurons in a unit square (Fig~\ref{fig:1}). Connectivity was defined between each pair of point neurons following the Waxman graph model:
+$$
+w_{ij}=\beta \exp\left(-\frac{||x_i-x_j||}{\alpha}\right)
+$$
+where $x_i$ is the location of neuron $i$. These dynamics had the effect of connecting nearby neurons strongly and distant neurons very weakly. Note that even though more neurons exist in a larger radius, the exponential decays more quickly than the rate at which new neurons are encountered. Therefore, neurons are more strongly connected to nearby neurons than to distant neurons, even in the aggregate.
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{fig1}
+\caption{Example network structure.}
+\label{fig:1}
+\end{figure}
+
+Additionally, a percentage of neurons were chosen to be inhibitory (denoted by the parameter $\mathcal{I}$), that is, having negative connectivity. Following Dale's Principle which states that neurons either have all excitatory or all inhibitory connections, each neuron's output was set to be either all positive or all negative. No other biases were placed upon inhibitory connections (such as only weak connections are inhibitory).
+
+\subsection{Network Dynamics}
+Network dynamics (Fig~\ref{fig:2}) were instantiated as a simple noisy LIF model with connectivity:
+$$
+v_{i,n+1}=v_{i,n} + \Delta t \left(-\frac{v_{i,n}}{\tau} + \sum_j w_{ij}s_{j,n} + \eta \right)
+$$
+where $v_{i,n}$ is the membrane potential of cell $i$ at step $n$, $\Delta t$ is the step size, $tau$ is the time constant, $s_{i,n}$ is the spiking activity of cell $i$, and $\eta \sim N(0,1)$. Spiking activity was defined as a binary response: $s_{i,n}=\mathbbm{1}_{v_{i,n}>V_T}$. If a spike occurred at time step $n$ in neuron $i$, then the $v_{i,n+1}$ was set to the reset potential $V_r$.
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{fig2}
+\caption{Example network dynamics using the same network defined in Fig~\ref{fig:1} evolved for 500 time steps. Waves of spiking acitivity are clearly visible. Sample traces are shown for the first 3 neurons.}
+\label{fig:2}
+\end{figure}
+
+\subsection{Parameter Values}
+To simulate cell type diversity, some parameters were varied between cells. In addition to chosing a random selection of cells to be inhibitory through the $\mathcal{I}$ parameter, the variance of $\beta$ in the Waxman model and $\tau$ in the LIF model were varied according to:
+\begin{align*}
+\beta_i&\sim \mathrm{LogNormal}(0,\sigma_\beta^2)\\
+\tau_i&\sim N(0.9,\sigma_\tau^2)\\
+\end{align*}
+Parameter values were chosen as follows:
+
+\vspace{2mm}
+\begin{tabular}{|c|c|l|}
+\hline
+\bf{Paramter} & \bf{Value} & \bf{Description} \\
+\hline
+$N$ & 100 & Number of neurons \\
+$\alpha$ & 0.15 & $\alpha$ in the Waxman graph, sets spatial extent of connectivity \\
+$\sigma_\beta$ & 1 & Variance of $\beta$ in the Waxman model \\
+$\mathcal{I}$ & 0.1 & Percent of neurons that have inhibitory output \\
+$\sigma_\tau$ & 0.0001 & Variance of the time constant \\
+$V_T$ & 0.6 & Threshold at which a spike occurs \\
+$V_r$ & -3 & Membrane potential after a spike occurs \\
+$\Delta t$ & 0.1 & Time step in the dynamics evolution \\
+\hline
+\end{tabular}
+
+\section{Results}
+To measure the effect of parameter variations, goodness of linear fits (to capture network simplicity) and the maximum Lyapunov exponent (to capture chaotic behavior) were measured for network activity. Linear models were defined simply as $\mathbf{v}_{n+1}=B\mathbf{v}_{n}$. Each parameter variation was repeated 100 times to account for random sampling of parameters such as neuron location and synaptic strengths.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{fig3}
+\caption{Linear model fit ($R^2$) and maximum Lyaponuv exponent ($\lambda$) for variations of network parameters.}
+\label{fig:3}
+\end{figure}
+
+Overall, increasing the cell type variability had only modest effect on the overall linearity of the network. The strongest effect was seen for large values of $\sigma_\beta$, which indicates that some complexity is gained through increases in synaptic strength for some neurons. Variations in $\sigma_\tau$ had no effect on linear fit or chaotic behavior. Interestingly, increases of $\mathcal{I}$ led to better linear fits as well as a slight decrease in $\lambda$, representing more predictable and stable network activity. However, the largest determining factor in network instability was simply the size of the network. As a methodological note, $\alpha$ was set to $\frac{0.15}{\sqrt{N/100}}$ to ensure increases in network size did not change the overall connecitivity of neurons.
+
+\section{Code}
+The code for this analysis is structured in four parts:
+\begin{enumerate}
+\item \texttt{src/network.jl}: Contains definitions of the network structure, connectivity, and dynamics.
+\item \texttt{src/plotting.jl}: Contains functions for generating the plots shown above as well as an animation of network activity using a Voronoi diagram.
+\item \texttt{src/experiments.jl}: Defines default parameters, constructs the network, and evolves the state.
+\item \texttt{explore/notebook.ipynb}: Demonstrates use of the package from a "user" perspective.
+\end{enumerate}
+
+The analyses here make extensive use of DynamicalSystems.jl, ChaosTools.jl, and Distributions.jl. Plotting is thanks to Makie.jl. Source code is available at \url{https://github.com/ilsedippenaar/ToySpikingNetworks.jl} along with a Binder link. Note that is may take approximately 30 minutes for the Binder environment to build.
+
+\end{document}
