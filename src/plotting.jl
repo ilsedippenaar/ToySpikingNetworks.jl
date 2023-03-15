@@ -70,7 +70,7 @@ function scaleboundingrect(p::Vector{<:Point2{T}}, s::Real) where T
     r = Rect(p)
     # the scale function (Base.:*) is kinda broken in GeometryBasics.jl?
     r = Rect(r.origin - r.widths .* (s-1)/2, r.widths .* s)
-    r |> extrema .|> Point2{T} |> splat(Rectangle)
+    r |> extrema .|> Point2{T} |> Base.splat(Rectangle)
 end
 
 function _voronoianimation(network::Network, A::StateSpaceSet, tvec)
