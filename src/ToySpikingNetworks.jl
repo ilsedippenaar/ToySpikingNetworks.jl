@@ -1,4 +1,4 @@
-module SpikingNetworks
+module ToySpikingNetworks
 
 include("network.jl")
 include("plotting.jl")

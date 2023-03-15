@@ -1,4 +1,4 @@
-name = "SpikingNetworks"
+name = "ToySpikingNetworks"
 uuid = "256c787d-d277-4e1d-baf8-6b845ce74ffc"
 authors = ["Ilse Dippenaar <ilsedipp@uw.edu>"]
 version = "0.1.0"

@@ -1,1 +1,1 @@
-# SpikingNetworks
+# ToySpikingNetworks

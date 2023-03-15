@@ -1,6 +1,6 @@
-using SpikingNetworks
+using ToySpikingNetworks
 using Test
 
-@testset "SpikingNetworks.jl" begin
+@testset "ToySpikingNetworks.jl" begin
     # Write your tests here.
 end
